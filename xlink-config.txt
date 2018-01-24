@@ -1,0 +1,7 @@
+## Network config
+# interface <interface> option=value, other_option=value, other=value
+# Example wireless config:
+# interface wlan0, ssid=someSSID, psk=SuperSecret, key_mgmt=WPA-PSK
+
+# Example wired config:
+# interface eth0

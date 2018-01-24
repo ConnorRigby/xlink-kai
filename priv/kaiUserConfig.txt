@@ -1,0 +1,66 @@
+# XLink Kai Engine Configuration
+#  Version 7.4.30
+
+[KaiUserConfig]
+
+# Username for automatic login
+kaiUsername=!
+
+# Password for automatic login
+kaiPassword=!
+
+# Use automatic login
+kaiAutoLogin=0
+
+# Use Web User Interface instead of GUI program
+kaiWebUI=1
+
+# Automatically launch Kai user interface
+kaiLaunchUI=1
+
+# User interface program name
+kaiUI=!
+
+# Web UI Password
+kaiHTTPPassword=!
+
+# Web UI Skin
+kaiSkin=!
+
+# Automatically open chat
+kaiAutoOpenChat=1
+
+# MBCS code page for asian character sets
+kaiCodepage=0
+
+# Language
+kaiLanguage=en
+
+# Enable port address translation
+kaiPAT=0
+
+# Set UDP port for peer-to-peer connections (0=random)
+kaiPort=0
+
+
+# Set TCP port for Web UI connections (connect with http://127.0.0.1:[portnumber]/)
+#  Default is 34522 - this does not need to be changed in most cases.  You DO NOT need to forward this port in your router.
+kaiWebUIPort=80
+
+# Proxy server IP address
+kaiProxyServer=!
+
+# Proxy server port
+kaiProxyPort=0
+
+# Network adapter (!=autodetect)
+kaiAdapter=!
+
+# Automatically shut down engine after x minutes (0=never)
+kaiTimeout=0
+
+# Automatically shut down engine when UI closes
+kaiUIClose=0
+
+# Accept connections from user interfaces on other computers
+kaiAcceptRemote=1
