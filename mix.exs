@@ -16,15 +16,15 @@ defmodule Xlink.MixProject do
   def project do
     [
       app: :xlink,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.4",
       target: @target,
       archives: [nerves_bootstrap: "~> 0.6"],
       deps_path: "deps/#{@target}",
       build_path: "_build/#{@target}",
       lockfile: "mix.lock.#{@target}",
-      build_embedded: Mix.env == :prod,
-      start_permanent: Mix.env == :prod,
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       aliases: aliases(@target),
       deps: deps()
     ]
@@ -47,7 +47,10 @@ defmodule Xlink.MixProject do
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
-    [{:nerves, "~> 0.7", runtime: false}] ++ deps(@target)
+    [
+      {:nerves, "~> 0.7", runtime: false},
+      {:mdns, "~> 0.1"}
+    ] ++ deps(@target)
   end
 
   # Specify target specific dependencies
@@ -58,13 +61,12 @@ defmodule Xlink.MixProject do
       {:bootloader, "~> 0.1"},
       {:nerves_runtime, "~> 0.4"},
       {:nerves_network, "~> 0.3"},
-      {:nerves_firmware_ssh, "~> 0.2"},
-      {:mdns, "~> 0.1"},
+      {:nerves_firmware_ssh, "~> 0.2"}
     ] ++ system(target)
   end
 
   defp system("rpi3"), do: [{:nerves_system_rpi3, ">= 0.0.0", runtime: false}]
-  defp system(target), do: Mix.raise "Unknown MIX_TARGET: #{target}"
+  defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 
   # We do not invoke the Nerves Env when running on the Host
   defp aliases("host"), do: []

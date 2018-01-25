@@ -83,7 +83,8 @@ defmodule Xlink.Application do
       [key, val] = String.split(str, "=")
       {String.to_atom(key), val}
     end)
-    network = Map.put(acc.network, String.to_atom(interface), network_config)
+    val = if Enum.empty?(network_config), do: [], else: network_config
+    network = Map.put(acc.network, interface, val)
     %{acc | network: network}
   end
 end
