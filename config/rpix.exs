@@ -1,6 +1,6 @@
 use Mix.Config
 config :nerves, :firmware,
-  rootfs_overlay: "config/rootfs_additions_rpi3",
+  rootfs_overlay: "config/rootfs_additions_rpix",
   fwup_conf: "fwup.conf"
 
 config :nerves_firmware_ssh, authorized_keys: [File.read!(Path.join(System.user_home!(), ".ssh/id_rsa.pub"))]

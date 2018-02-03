@@ -9,5 +9,11 @@ config :xlink,
 config :xlink, filename: "kaiEngine-7.4.30-rev595.headless.ARM.tar.gz"
 config :xlink, data_dir: "tmp/xlink_data"
 config :xlink, config_file: "/boot/xlink-config.txt"
-# config :xlink, config_file: "xlink-config.txt"
-import_config "#{Mix.Project.config()[:target]}.exs"
+
+target = Mix.Project.config()[:target]
+
+if String.contains?(target, "rpi") do
+  import_config "rpix.exs"
+else
+  import_config "#{target}.exs"
+end
