@@ -58,7 +58,7 @@ defmodule Xlink.MixProject do
 
   defp deps(target) do
     [
-      {:bootloader, "~> 0.1"},
+      {:shoehorn, "~> 0.1"},
       {:nerves_runtime, "~> 0.4"},
       {:nerves_network, "~> 0.3"},
       {:nerves_firmware_ssh, "~> 0.2"}
@@ -66,7 +66,7 @@ defmodule Xlink.MixProject do
   end
 
   defp system("rpi"), do: [{:nerves_system_rpi, ">= 0.0.0", runtime: false}]
-  defp system("rpi0"), do: [{:nerves_system_rpi0, ">= 0.0.0", runtime: false}]
+  defp system("rpi0"), do: [{:nerves_system_rpi0, "~> 0.21.0", runtime: false}]
   defp system("rpi2"), do: [{:nerves_system_rpi2, ">= 0.0.0", runtime: false}]
   defp system("rpi3"), do: [{:nerves_system_rpi3, ">= 0.0.0", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
@@ -75,9 +75,6 @@ defmodule Xlink.MixProject do
   defp aliases("host"), do: []
 
   defp aliases(_target) do
-    [
-      "deps.precompile": ["nerves.precompile", "deps.precompile"],
-      "deps.loadpaths": ["deps.loadpaths", "nerves.loadpaths"]
-    ]
+    [] |> Nerves.Bootstrap.add_aliases()
   end
 end
