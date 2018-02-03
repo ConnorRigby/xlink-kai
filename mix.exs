@@ -67,7 +67,7 @@ defmodule Xlink.MixProject do
 
   defp system("rpi"), do: [{:nerves_system_rpi, ">= 0.0.0", runtime: false}]
   defp system("rpi0"), do: [{:nerves_system_rpi0, ">= 0.0.0", runtime: false}]
-  defp system("rpi1"), do: [{:nerves_system_rpi2, ">= 0.0.0", runtime: false}]
+  defp system("rpi2"), do: [{:nerves_system_rpi2, ">= 0.0.0", runtime: false}]
   defp system("rpi3"), do: [{:nerves_system_rpi3, ">= 0.0.0", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 
