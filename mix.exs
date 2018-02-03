@@ -16,7 +16,7 @@ defmodule Xlink.MixProject do
   def project do
     [
       app: :xlink,
-      version: "0.1.2",
+      version: File.read!("VERSION") |> String.trim(),
       elixir: "~> 1.4",
       target: @target,
       archives: [nerves_bootstrap: "~> 0.6"],
