@@ -37,12 +37,12 @@ defmodule Xlink.NetworkUp do
 
   def name(interface), do: Module.concat(__MODULE__, interface)
 
-  def start_link(interface, settings \\ %{}) do
+  def start_link(interface, settings \\ []) do
     GenServer.start_link(__MODULE__, [interface, settings], name: name(interface))
   end
 
   def init([interface, settings]) do
-    Network.setup(interface, settings)
+    Network.setup(interface, Enum.map(settings, fn({key, val}) -> {key, val} end))
     SystemRegistry.register()
     init_mdns(domain(interface))
     {:ok, %{connected: false, ip_address: nil, interface: interface, heartbeat: nil}}
