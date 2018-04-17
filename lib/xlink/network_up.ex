@@ -13,7 +13,9 @@ defmodule Xlink.NetworkUp do
 
   def wait_for_dns(interface) do
     case connected?(interface) do
-      true -> :ok
+      true ->
+        :ok
+
       _ ->
         Process.sleep(1500)
         wait_for_dns(interface)
@@ -25,6 +27,7 @@ defmodule Xlink.NetworkUp do
       true ->
         Process.sleep(15000)
         dns_heartbeat(interface)
+
       _ ->
         not_connected(interface)
         Process.sleep(1500)
@@ -35,7 +38,7 @@ defmodule Xlink.NetworkUp do
   def name(interface), do: Module.concat(__MODULE__, interface)
 
   def start_link(interface, settings \\ %{}) do
-    GenServer.start_link(__MODULE__, [interface, settings], [name: name(interface)])
+    GenServer.start_link(__MODULE__, [interface, settings], name: name(interface))
   end
 
   def init([interface, settings]) do
@@ -46,15 +49,17 @@ defmodule Xlink.NetworkUp do
   end
 
   def handle_info({:system_registry, :global, registry}, state) do
-    ip = get_in registry, [:state, :network_interface, state.interface, :ipv4_address]
+    ip = get_in(registry, [:state, :network_interface, state.interface, :ipv4_address])
+
     if ip != state.ip_address do
-      Logger.warn "IP ADDRESS CHANGED on #{state.interface}: #{ip}"
+      Logger.warn("IP ADDRESS CHANGED on #{state.interface}: #{ip}")
       update_mdns(ip, domain(state.interface))
     end
 
     connected = match?({:ok, {:hostent, _, [], :inet, 4, _}}, test_dns())
+
     if connected do
-      heartbeat = spawn __MODULE__, :dns_heartbeat, [state.interface]
+      heartbeat = spawn(__MODULE__, :dns_heartbeat, [state.interface])
       {:noreply, %{state | ip_address: ip, connected: connected, heartbeat: heartbeat}}
     else
       {:noreply, %{state | ip_address: ip, connected: false}}
@@ -63,15 +68,22 @@ defmodule Xlink.NetworkUp do
 
   def handle_info(_, state), do: {:noreply, state}
 
-  def handle_call(:connected?, _from, state), do: {:reply, state.connected, state}
+  def handle_call(:connected?, _from, state) do
+    connected = match?({:ok, {:hostent, _, [], :inet, 4, _}}, test_dns())
+    state = %{state | connected: connected}
+    {:reply, state.connected, state}
+  end
   def handle_call(:ip_addr, _from, state), do: {:reply, state.ip_address, state}
+
   def handle_call(:not_connected, _from, state) do
-    Logger.warn "Disconnected!"
+    Logger.warn("Disconnected!")
+
     if state.heartbeat && Process.alive?(state.heartbeat) do
       Process.exit(state.heartbeat, :kill)
     else
-      Logger.error "Couldn't stop heartbeat process."
+      Logger.error("Couldn't stop heartbeat process.")
     end
+
     {:reply, :ok, %{state | connected: false, heartbeat: nil}}
   end
 

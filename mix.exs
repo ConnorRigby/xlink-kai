@@ -30,18 +30,6 @@ defmodule Xlink.MixProject do
     ]
   end
 
-  defp make_env() do
-    case System.get_env("ERL_EI_INCLUDE_DIR") do
-      nil ->
-        %{
-          "ERL_EI_INCLUDE_DIR" => "#{:code.root_dir()}/usr/include",
-          "ERL_EI_LIBDIR" => "#{:code.root_dir()}/usr/lib"
-        }
-      _ ->
-        %{}
-    end
-  end
-
   # Run "mix help compile.app" to learn about applications.
   def application, do: application(@target)
 
@@ -60,9 +48,10 @@ defmodule Xlink.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:elixir_make, "~> 0.4.0", runtime: false},
       {:nerves, "~> 1.0.0-rc", runtime: false},
-      {:mdns, "~> 1.0"}
+      {:mdns, "~> 1.0"},
+      {:poison, "~> 3.1"},
+      {:ex_syslogger, "~> 1.4"}
     ] ++ deps(@target)
   end
 
@@ -74,11 +63,11 @@ defmodule Xlink.MixProject do
       {:shoehorn, "~> 0.2.0"},
       {:nerves_runtime, "~> 0.6.0"},
       {:nerves_network, "~> 0.3.7-rc0"},
-      {:nerves_firmware_ssh, "~> 0.2"}
+      {:nerves_firmware_ssh, "~> 0.2"},
     ] ++ system(target)
   end
 
-  defp system("rpi"), do: [{:nerves_system_rpi,   "~> 1.0.0-rc", runtime: false}]
+  defp system("rpi"), do: [{:nerves_system_rpi, "~> 1.0.0-rc", runtime: false}]
   defp system("rpi0"), do: [{:nerves_system_rpi0, "~> 1.0.0-rc", runtime: false}]
   defp system("rpi2"), do: [{:nerves_system_rpi2, "~> 1.0.0-rc", runtime: false}]
   defp system("rpi3"), do: [{:nerves_system_rpi3, "~> 1.0.0-rc", runtime: false}]
@@ -88,5 +77,4 @@ defmodule Xlink.MixProject do
     Application.start(:nerves_bootstrap)
     Mix.Task.run("loadconfig", args)
   end
-
 end
