@@ -5,7 +5,7 @@ config :nerves, :firmware,
 
 config :nerves_firmware_ssh, authorized_keys: [File.read!(Path.join(System.user_home!(), ".ssh/id_rsa.pub"))]
 
-config :bootloader,
+config :shoehorn,
   init: [:nerves_runtime, :nerves_network, :nerves_firmware_ssh],
   app: Mix.Project.config()[:app]
 

@@ -20,15 +20,12 @@ defmodule Xlink.MixProject do
       elixir: "~> 1.4",
       target: @target,
       archives: [nerves_bootstrap: "~> 1.0.0-rc"],
-      compilers: [:elixir_make] ++ Mix.compilers,
-      make_clean: ["clean"],
-      make_env: make_env(),
       deps_path: "deps/#{@target}",
       build_path: "_build/#{@target}",
       lockfile: "mix.lock.#{@target}",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
-      aliases: aliases(@target),
+      aliases: [loadconfig: [&bootstrap/1]],
       deps: deps()
     ]
   end
@@ -87,10 +84,9 @@ defmodule Xlink.MixProject do
   defp system("rpi3"), do: [{:nerves_system_rpi3, "~> 1.0.0-rc", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 
-  # We do not invoke the Nerves Env when running on the Host
-  defp aliases("host"), do: []
-
-  defp aliases(_target) do
-    [] |> Nerves.Bootstrap.add_aliases()
+  defp bootstrap(args) do
+    Application.start(:nerves_bootstrap)
+    Mix.Task.run("loadconfig", args)
   end
+
 end
