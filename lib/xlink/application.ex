@@ -71,6 +71,10 @@ defmodule Xlink.Application do
 
   def parse_config(<<"">>, _state, acc), do: acc
 
+  def parse_config(<<" ", rest :: binary>>, state, acc) do
+    parse_config(rest, state, acc)
+  end
+
   def parse_config(<<"", rest :: binary>>, state, acc) do
     parse_config(rest, state, acc)
   end

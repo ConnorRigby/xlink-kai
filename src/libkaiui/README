@@ -1,0 +1,324 @@
+LibKaiUI - implement a KAI User Interface
+-----------------------------------------
+by ^S^ and Zipleen
+
+
+1.Introduction
+--------------
+
+This lib was created so that programmers can create whatever GUI 
+clientes they want without needing to touch the networking part. In 
+search for creating a ncurses UI, a static lib was created so it could 
+be easy for other people to just concentrate on the GUI part, and not in 
+the network part.. so this lib encapsulates all the network 
+functionality.
+Remember, this lib was created to work with kaiD (the server daemon for 
+linux), but it also supports the windows server. All functions should be 
+usable, except Speex support. I think team avalaunch released on the 
+other day a lib to accomplish this either...
+
+2.Design
+--------
+
+Server->UI
+This lib implements a callback function to process all events coming 
+from the server. This makes it very easy to use and implement.
+Also, not so that easy, all the info about messenger user, chat users 
+and chat channels are stored in 3 lists. Examples later on...
+
+UI->Server
+The rest of the functions are straighforward, they are all documented in 
+kaiui.h . To send a message or to add a contact or whatever you want to 
+do, you just call the desired function with the right parameters.
+
+LibError
+This is a lib, so it doens't print anything... so, to see if you at some 
+point have an error, you call LibError(&mychar) and see what return code 
+it gets. If != 0 then you have some sort of an error... see mychar for 
+some text error info... Errors can happen in sendto() recvfrom() or a 
+bind() error...
+
+3.Implementing
+--------------
+
+	3.1. Starting up..
+	------------------
+
+		3.1.1 Init()
+		------------
+The first thing you should do is init the callback function.
+Example:
+	void OnEvent(KAIEVENT id, void* data, int data_size);
+		// this is your callback function, and data is processed
+		// inside it...
+
+you should initialize the program with
+	Init(OnEvent,"0");
+
+The passing argument "0" is the port number for you program. That is, if
+you pass "0" (you should...), the OS will auto-assign a port and bind to
+it. But if you want, you can specify the port you want it to bind to.
+But be aware, if your port is allready taken, bind will return an error!
+
+Remember, in your application check if port_number you pass to Init() is 
+valid! only numbers between 1025-65535 are valid ones, so verify it 
+before passing it to the function.
+
+		3.1.2 Discover()
+		----------------
+
+After this you need to discover if there is a kai server in the network 
+(either linux or windows). This function only returns to the program 
+when it finds a server...
+So, you do
+	Discover();
+and you wait for it to discover.... if it doens't discover, well the 
+program doesn't make much sence then right? so it will go in an infinite 
+loop...
+
+If discover is successfull, you should get a EV_ENGINE_HERE event. 
+After that you can proceed with Attach().
+
+
+		3.1.3 Attach()
+		--------------
+
+Moving along.. after discovery is done, you need to attach to the 
+server. This is the third and "final" step for you program to initialize 
+to kaiD right!
+You call 
+	Attach();
+and the lib will try to attach to the kaid discovered server!
+There are 4 ways:
+- You are logged in: in this case, you start to receive status 
+	messages, clients, where you are and stuff like that (via the callback 
+	function)
+	
+- You are NOT logged in, and you didn't set Auto-Login:
+	In this case you need to login! Use
+			login(login_name,password)
+	to login, and wait for an event to come.. you could be "logged_in"
+	or you could get Authentication Failed.
+	Now, authentication failed is a bit special in kaid, you can't 
+	change the LOGIN USERNAME! you can only change the password... so, if 
+	you entered your login wrong, you have to close the program 
+	(remember to use Detach() first! don't use End() or you could 
+	crash kai server ;)
+
+- You are not logged in, but you set Auto-login to 1
+	In this case, the lib will auto-login, so you should be in
+	"logged in state". If auto-login user and pass are wrong, you 
+	get an authentication failed.
+
+- You get ENGINE_IN_USE:
+	Well this is a special case... if the engine is in use,
+	(means that other UI is allready attached to the server..)
+	you need to Takeover() or simply exit the program.
+	Your program should ask the user if he wants to takeover the 
+	other ui.
+	After the Takeover() command is done, you should except to 
+	receive one of the other 3 conditions...
+
+To summarize, after you Attach() you need to expect LOGGED_IN event, 
+NOT_LOGGED_IN event, AUTHENTICATION FAILED event and ENGINE_IN_USE 
+event. If ENGINE_IN_USE you should ask the user, and Takeover. After 
+that you should receive one of the other events...
+
+
+	3.2 After login...
+	------------------
+NEW:
+After login you have to send your UI capabilities! Use
+SendClientCapabilites() function to send to the engine what capabilities 
+you have. If your capabilities change, you send can and should send them 
+again by calling the function again!
+
+
+Well now all you need to do is code your OnEvent() right! All events 
+that arrive to the UI are processed with the callback function...
+
+In kaiui.h you have all the events you need to process. If a event gives 
+you more that a simple char* or a int, a struct is created. Thus you 
+need to this:
+
+ENGINE_HERE* en;
+en = (ENGINE_HERE*)data;
+
+After this you can access the data with en->engine_ip or 
+en->engine_port, and you do whatever you want to do with the data...
+
+
+	3.3 Users and channels
+	----------------------
+
+Checking the kaiui.h file, you see that you have events for:
+Adding user to the contact list
+Removing a user from the contact list
+
+Joining a vector
+Leaving a vector
+
+Joingin a chat channel
+Leaving a chat channel
+
+Users joining vectors and chat channels
+Users leving from them...
+
+All this events are covered by an EVENT. The event also has the data you 
+need to process.
+You should keep this info in the GUI ...  
+
+
+	3.4 Browsing Vectors and Chat Channels
+	--------------------------------------
+
+In kai, you can be in a vector and in a different chat channel! Thus 
+don't mix that info! If you joined a vector, that doesn't mean you got 
+out of the channel as well... use GoArena() and you will be fine :D 
+
+The lib has some functions to help you in this. If you change a vector, 
+you should also change chat channels...
+
+		3.4.1 Changing Vectors
+		----------------------
+
+Just issue a Vector("Arena/XBox","") or whatever arena you want, and it 
+will ask the server to change to it. The second parameter is the 
+password... Passwords are managed by the GUI and not by the lib.
+After joining the vector you should get the SUB vectors it has:
+GetVectors("Arena/XBox");
+Note also that vectors are CaSe-SEnSitIvE so be carefull if you're 
+coding a textUI. 
+
+			3.4.1.1 GoArena()
+			-----------------
+
+This function aids in browsing arenas in the right way... 
+Like in a filesystem, you can pass arenas in this way to the func.
+Just issue GoArena("/Arena/XBox",""); and you'll go to that arena.
+If you want, you can use GoArena("XBox",""); and the lib will try to go
+,from the current arena to "XBox" arena. That means you don't need to know
+your current arena, only the sub-ones.
+
+You should take care about the CasE-SenSiTiVe stuff. Keep the arenas in
+the UI, and only issue commands GoArena with the respective case correction.
+
+			3.4.1.2 GoUp()
+			--------------
+
+Similar to the previous function, this one changes to the arena where 
+you were before... from the current arena, you go down one level and get 
+the sub vectors for it.
+
+With this, browsing should be straighforward. You GoArena("bla","") and 
+you GoUp() and you should implement the browsing easely.
+
+
+		3.4.2 Chat channels
+		-------------------
+
+To be in a chat channel, you need to "Turn On" chat mode. That's easy,
+just issue Chatmode("your_current_arena");
+If you don't know your current arena, you can use GetCurrentArena(char);
+to get the current arena, and then, you go into chatmode.
+Then you wait for the event...
+
+To browse through the channels, as you browse arenas, you can use
+GoArena() and it will do it for you.
+If you want to browse them by hand (not recommended), you need to
+Vector()
+GetVectors()
+Chatmode()
+
+and then you are in chatmode in the current vector.
+Kai can be a little bit confusing in this chatmode, but just use
+GoArena and you'll be fine. If you were in chatmode, you continue in chatmode
+else you don't go into chatmode, but still browse the arenas.
+
+	3.5 Admins and moderators
+	-------------------------
+
+This one is a bit tricky... when you attach to a kai server, you 
+download your contacts, you get the mode you were (messenger or arena) 
+and you get the admins and mods.
+The problem is that the info of admins and mods could arrive AFTER you 
+get the contacts of a chat channel. That isn't too concerning because if 
+you join and enter a vector or a chat channel, you get the info right...
+The other way is to process the MODERATOR_PRIVILEGES event, parse the 
+list (it's separated by a "/") and correct the status in your UI. But i 
+think you don't need to do this step... you should only care for the 
+below one.
+
+Admins and Mods are marked by an int (Boolean lets say :P 1 for true, 0 
+for false). 
+When you get a EV_JOINS_CHAT event,in the passing struct you have these 
+two fields that say to you if the user is an admin or a mod.
+
+	3.6 Pinging...
+	--------------
+
+Later on, you will see that Kai Server is allways sending you the pings 
+for all the contacts and clients hehe you should update your GUI with 
+the pings...
+
+More important, ARENA_CONTACT_PING delivers the state about the users
+that are in the current vector! It says if they are hosting a game and
+how many consoles are detected! Win32 gui uses this in the form of images
+in avatar:p use this info the way you want to...
+
+NEW: We now have a "caps" (capabilities) feature. In the pings there are 
+new fields.
+ -> ui : if set to 1 this is a UI
+ -> xbox_ui : if set to 1 this is a xbox UI
+ -> console_and_voice : if set to 1 the user has at least 1 console and 
+has voice capabilities enabled
+ -> text_chat : if set to 1, the UI has text chat capabilities
+ -> bot : if set to 1 this is a bot
+
+You can do what you want with this info... it should be good to process 
+*some* or ALL of it. If a user has console_and_voice support you should 
+display something that will tell the users that they can chat with that 
+person.
+
+	3.7 Other functions
+	-------------------
+
+The other functions should be straightforward...
+
+	3.8 Finnishing up
+	-----------------
+
+When you want to exit the program, just call End(). It will 
+leave chatmode and detach() automatically for you. It will then 
+clean up all the lists, and close the socket and thread.
+KaiUI.exe in win32 won't leave chatmode, but i though closing the chat 
+mode should be more correct than leaving it on (because you *can't* read 
+what they are saying in there, but you still appear in the chat 
+channel...).
+
+4. Final words
+--------------
+
+On the last stages of the development, i put the UI in VisualC and it 
+compiled! There is a libkaiui.lib for win32 and you could create another 
+GUI for windows if you want to! (Well, this could be lost time lol)
+But, no all is lost, because a libkaiui.lib for XBOX is also compiled! 
+The lib can be linked to the xbmc .xbe and can be used to implement kai 
+in there! Any .xbe can be used...
+(note: implementing libkaiui in xbmc took 1hour (half an hour i was 
+looking to the code lol) to implement *all* the functions that xbmc 
+provides in gui form, should be *easy* to implement in any xbe :D) 
+
+This, of course, needs *A LOT* of testing, although the lib was running 
+quite smoothly with no mem leaks or crashes whatsoever.
+
+But, using this lib we could be seeing KAI in whatever xbe you want it 
+to be :p hehe this sould be fun.....
+
+You can check some sample codes in the webpage hehe
+
+License
+-------
+This lib is under the BSD license. For licensing info see 'license' 
+file.
+

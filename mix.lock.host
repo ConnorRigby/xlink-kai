@@ -1,0 +1,8 @@
+%{
+  "distillery": {:hex, :distillery, "1.5.2", "eec18b2d37b55b0bcb670cf2bcf64228ed38ce8b046bb30a9b636a6f5a4c0080", [:mix], [], "hexpm"},
+  "dns": {:hex, :dns, "2.1.0", "4777fe07ae3060c1d5d75024f05c26d7e11fa701d48a6edb9fc305d24cd12c8c", [:mix], [{:socket, "~> 0.3.13", [hex: :socket, repo: "hexpm", optional: false]}], "hexpm"},
+  "elixir_make": {:hex, :elixir_make, "0.4.1", "6628b86053190a80b9072382bb9756a6c78624f208ec0ff22cb94c8977d80060", [:mix], [], "hexpm"},
+  "mdns": {:hex, :mdns, "1.0.1", "c0e490f7c90ee6b546284c942ebb1c239375fb5f788e765d22ea8ff848cfe842", [:mix], [{:dns, "~> 2.0", [hex: :dns, repo: "hexpm", optional: false]}], "hexpm"},
+  "nerves": {:hex, :nerves, "1.0.0-rc.1", "7574d0c598074311e86128bea4c4a69ae751b4762a0c5ef817c9f61371091992", [:mix], [{:distillery, "~> 1.4", [hex: :distillery, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}], "hexpm"},
+  "socket": {:hex, :socket, "0.3.13", "98a2ab20ce17f95fb512c5cadddba32b57273e0d2dba2d2e5f976c5969d0c632", [:mix], [], "hexpm"},
+}

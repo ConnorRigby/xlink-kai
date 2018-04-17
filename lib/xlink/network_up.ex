@@ -52,7 +52,7 @@ defmodule Xlink.NetworkUp do
       update_mdns(ip, domain(state.interface))
     end
 
-    connected = match?({:ok, {:hostent, 'nerves-project.org', [], :inet, 4, _}}, test_dns())
+    connected = match?({:ok, {:hostent, _, [], :inet, 4, _}}, test_dns())
     if connected do
       heartbeat = spawn __MODULE__, :dns_heartbeat, [state.interface]
       {:noreply, %{state | ip_address: ip, connected: connected, heartbeat: heartbeat}}
@@ -75,7 +75,7 @@ defmodule Xlink.NetworkUp do
     {:reply, :ok, %{state | connected: false, heartbeat: nil}}
   end
 
-  def test_dns(hostname \\ 'nerves-project.org') do
+  def test_dns(hostname \\ 'teamxlink.co.uk') do
     :inet_res.gethostbyname(hostname)
   end
 

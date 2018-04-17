@@ -19,7 +19,10 @@ defmodule Xlink.MixProject do
       version: File.read!("VERSION") |> String.trim(),
       elixir: "~> 1.4",
       target: @target,
-      archives: [nerves_bootstrap: "~> 0.6"],
+      archives: [nerves_bootstrap: "~> 1.0.0-rc"],
+      compilers: [:elixir_make] ++ Mix.compilers,
+      make_clean: ["clean"],
+      make_env: make_env(),
       deps_path: "deps/#{@target}",
       build_path: "_build/#{@target}",
       lockfile: "mix.lock.#{@target}",
@@ -28,6 +31,18 @@ defmodule Xlink.MixProject do
       aliases: aliases(@target),
       deps: deps()
     ]
+  end
+
+  defp make_env() do
+    case System.get_env("ERL_EI_INCLUDE_DIR") do
+      nil ->
+        %{
+          "ERL_EI_INCLUDE_DIR" => "#{:code.root_dir()}/usr/include",
+          "ERL_EI_LIBDIR" => "#{:code.root_dir()}/usr/lib"
+        }
+      _ ->
+        %{}
+    end
   end
 
   # Run "mix help compile.app" to learn about applications.
@@ -48,8 +63,9 @@ defmodule Xlink.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:nerves, "~> 0.7", runtime: false},
-      {:mdns, "~> 0.1"}
+      {:elixir_make, "~> 0.4.0", runtime: false},
+      {:nerves, "~> 1.0.0-rc", runtime: false},
+      {:mdns, "~> 1.0"}
     ] ++ deps(@target)
   end
 
@@ -58,17 +74,17 @@ defmodule Xlink.MixProject do
 
   defp deps(target) do
     [
-      {:shoehorn, "~> 0.1"},
-      {:nerves_runtime, "~> 0.4"},
-      {:nerves_network, "~> 0.3"},
+      {:shoehorn, "~> 0.2.0"},
+      {:nerves_runtime, "~> 0.6.0"},
+      {:nerves_network, "~> 0.3.7-rc0"},
       {:nerves_firmware_ssh, "~> 0.2"}
     ] ++ system(target)
   end
 
-  defp system("rpi"), do: [{:nerves_system_rpi, ">= 0.0.0", runtime: false}]
-  defp system("rpi0"), do: [{:nerves_system_rpi0, "~> 0.21.0", runtime: false}]
-  defp system("rpi2"), do: [{:nerves_system_rpi2, ">= 0.0.0", runtime: false}]
-  defp system("rpi3"), do: [{:nerves_system_rpi3, ">= 0.0.0", runtime: false}]
+  defp system("rpi"), do: [{:nerves_system_rpi,   "~> 1.0.0-rc", runtime: false}]
+  defp system("rpi0"), do: [{:nerves_system_rpi0, "~> 1.0.0-rc", runtime: false}]
+  defp system("rpi2"), do: [{:nerves_system_rpi2, "~> 1.0.0-rc", runtime: false}]
+  defp system("rpi3"), do: [{:nerves_system_rpi3, "~> 1.0.0-rc", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 
   # We do not invoke the Nerves Env when running on the Host
