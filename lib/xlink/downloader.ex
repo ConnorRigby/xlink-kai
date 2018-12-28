@@ -1,4 +1,4 @@
-defmodule Xlink.Downloder do
+defmodule Xlink.Downloader do
   @moduledoc """
   Downloads and unpacks the xlink engine.
   """
@@ -6,6 +6,24 @@ defmodule Xlink.Downloder do
   @dir Application.get_env(:xlink, :data_dir) || Mix.raise("no data dir")
   @dl_filename Application.get_env(:xlink, :filename) || Mix.raise("no filename")
   require Logger
+
+  use GenServer
+
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, [name: __MODULE__])
+  end
+
+  def init(args) do
+    try do
+      dl_and_unarchive()
+      :ignore
+    catch
+      error, reason -> 
+        IO.inspect({error, reason}, label: "Downloader fail")
+        Process.sleep(5000)
+        init(args)
+    end
+  end
 
   def dl_and_unarchive do
     if !File.exists?(@dir) do
@@ -21,10 +39,10 @@ defmodule Xlink.Downloder do
 
     case :erl_tar.extract({:binary, file_contents}, [:compressed, :memory]) do
       {:ok, file_list} ->
+        Logger.info "#{engine_file()} extracting"
         file_contents = file_list |> Map.new() |> Map.get('kaiEngine-7.4.30/kaiengine')
         File.write(engine_file(), file_contents)
         File.chmod(engine_file(), 0o777)
-
       err ->
         exit("Error extracting archive: #{inspect(err)}")
     end

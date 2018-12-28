@@ -1,0 +1,11 @@
+[
+  {
+    "ifname": "wlan0",
+    "ssid": "TestSSID1234",
+    "psk": "supersecret1234",
+    "key_mgmt": "WPA-PSK"
+  },
+  {
+    "ifname": "eth0"
+  }
+]

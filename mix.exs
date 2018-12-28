@@ -17,9 +17,9 @@ defmodule Xlink.MixProject do
     [
       app: :xlink,
       version: File.read!("VERSION") |> String.trim(),
-      elixir: "~> 1.4",
+      elixir: "~> 1.7",
       target: @target,
-      archives: [nerves_bootstrap: "~> 1.0.0-rc"],
+      archives: [nerves_bootstrap: "~> 1.3"],
       deps_path: "deps/#{@target}",
       build_path: "_build/#{@target}",
       lockfile: "mix.lock.#{@target}",
@@ -48,10 +48,10 @@ defmodule Xlink.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:nerves, "~> 1.0.0-rc", runtime: false},
-      {:mdns, "~> 1.0"},
-      {:poison, "~> 3.1"},
-      {:ex_syslogger, "~> 1.4"}
+      {:nerves, "~> 1.3", runtime: false},
+      {:ring_logger, "~> 0.6"},
+      {:jason, "~> 1.1"},
+      {:muontrap, "~> 0.4.0"}
     ] ++ deps(@target)
   end
 
@@ -60,17 +60,17 @@ defmodule Xlink.MixProject do
 
   defp deps(target) do
     [
-      {:shoehorn, "~> 0.2.0"},
-      {:nerves_runtime, "~> 0.6.0"},
-      {:nerves_network, "~> 0.3.7-rc0"},
-      {:nerves_firmware_ssh, "~> 0.2"},
+      {:shoehorn, "~> 0.4"},
+      {:nerves_runtime, "~> 0.8"},
+      {:nerves_init_gadget, "~> 0.5"},
+      {:nerves_time, "~> 0.2"}
     ] ++ system(target)
   end
 
-  defp system("rpi"), do: [{:nerves_system_rpi, "~> 1.0.0-rc", runtime: false}]
-  defp system("rpi0"), do: [{:nerves_system_rpi0, "~> 1.0.0-rc", runtime: false}]
-  defp system("rpi2"), do: [{:nerves_system_rpi2, "~> 1.0.0-rc", runtime: false}]
-  defp system("rpi3"), do: [{:nerves_system_rpi3, "~> 1.0.0-rc", runtime: false}]
+  defp system("rpi"), do: [{:nerves_system_rpi, "~> 1.6", runtime: false}]
+  defp system("rpi0"), do: [{:nerves_system_rpi0, "~> 1.6", runtime: false}]
+  defp system("rpi2"), do: [{:nerves_system_rpi2, "~> 1.6", runtime: false}]
+  defp system("rpi3"), do: [{:nerves_system_rpi3, "~> 1.6", runtime: false}]
   defp system(target), do: Mix.raise("Unknown MIX_TARGET: #{target}")
 
   defp bootstrap(args) do

@@ -1,141 +1,66 @@
 defmodule Xlink.Application do
   use Application
-  alias Xlink.Task
-  import Supervisor.Spec, warn: false
+  alias Xlink.{Downloader, Engine}
+
+  @network_keys [
+    "ifname", 
+    "ssid", 
+    "psk", 
+    "key_mgmt", 
+    "ipv4_address", 
+    "ipv4_address_method",
+    "ipv4_subnet_mask",
+    "ipv4_broadcast",
+    "ipv4_gateway"
+  ]
 
   def start(_type, _args) do
-    children =
-      [
-        network_config(),
-        worker(
-          Task,
-          [
-            Xlink.Ntp,
-            :set_time,
-            []
-          ],
-          id: :ntp
-        ),
-        worker(
-          Task,
-          [
-            Xlink.Downloder,
-            :dl_and_unarchive,
-            []
-          ],
-          restart: :transient,
-          id: :downloader
-        ),
-        worker(Xlink.Engine, [], [])
-      ]
-      |> List.flatten()
+    network_up()
+    children = [
+      {Downloader, []},
+      {Engine, []}
+    ]
 
     opts = [strategy: :one_for_one, name: Xlink.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
-  def network_config do
-    conf = get_config().network
-
-    Enum.map(conf, fn {iface, settings} ->
-      [
-        worker(Xlink.NetworkUp, [iface, settings]),
-        worker(
-          Task,
-          [
-            Xlink.NetworkUp,
-            :wait_for_dns,
-            [iface]
-          ],
-          id: :"network_up_#{iface}"
-        )
-      ]
+  def network_up do
+    networks = Application.get_env(:xlink, :config_file)
+    |> File.read!()
+    |> Jason.decode!()
+    |> parse()
+    old = Application.get_env(:nerves_network, :default, [])
+    new = Enum.reduce(networks, old, fn({ifname, settings}, acc) ->
+      Keyword.put(acc, String.to_atom(ifname), settings) 
     end)
-    |> List.flatten()
+    Application.put_env(:nerves_network, :default, new)
+
+    for {ifname, settings} <- networks do
+      Nerves.Network.setup(ifname, settings)
+    end
+    networks
   end
 
-  def get_config do
-    File.read!(Application.get_env(:xlink, :config_file))
-    |> parse_config()
-  end
+  def parse(list, acc \\ [])
 
-  def parse_config(
-        bin,
-        state \\ %{in_comment: false, field: nil, field_acc: nil},
-        acc \\ %{network: %{}}
-      )
-
-  def parse_config(<<"#", rest::binary>>, state, acc) do
-    parse_config(rest, %{state | in_comment: true}, acc)
-  end
-
-  def parse_config(<<"\n", rest::binary>>, %{in_comment: true} = state, acc) do
-    parse_config(rest, %{state | in_comment: false}, acc)
-  end
-
-  def parse_config(<<_, rest::binary>>, %{in_comment: true} = state, acc) do
-    parse_config(rest, state, acc)
-  end
-
-  def parse_config(<<"interface ", rest::binary>>, state, acc) do
-    parse_config(rest, %{state | field: :interface, field_acc: <<>>}, acc)
-  end
-
-  def parse_config(
-        <<"\n", rest::binary>>,
-        %{field: :interface, field_acc: field_acc} = state,
-        acc
-      ) do
-    parse_config(
-      rest,
-      %{state | field: nil, field_acc: nil},
-      parse_interface_config(acc, field_acc)
-    )
-  end
-
-  def parse_config(<<";", rest::binary>>, %{field: :interface, field_acc: field_acc} = state, acc) do
-    parse_config(
-      rest,
-      %{state | field: nil, field_acc: nil},
-      parse_interface_config(acc, field_acc)
-    )
-  end
-
-  def parse_config(
-        <<char, rest::binary>>,
-        %{field: :interface, field_acc: field_acc} = state,
-        acc
-      ) do
-    parse_config(rest, %{state | field_acc: field_acc <> <<char>>}, acc)
-  end
-
-  def parse_config(<<"\n", rest::binary>>, state, acc) do
-    parse_config(rest, state, acc)
-  end
-
-  def parse_config(<<"">>, _state, acc), do: acc
-
-  def parse_config(<<_, rest::binary>>, state, acc) do
-    parse_config(rest, state, acc)
-  end
-
-  def parse_config(<<"", rest::binary>>, state, acc) do
-    parse_config(rest, state, acc)
-  end
-
-  def parse_config(<<>>, _state, acc), do: acc
-
-  def parse_interface_config(acc, config) do
-    [interface | configs] = String.split(String.trim(config), ", ")
-
-    network_config =
-      Map.new(configs, fn str ->
-        [key, val] = String.split(str, "=")
-        {String.to_atom(key), val}
+  def parse([%{} = network | rest], acc) do
+    {[ifname: ifname], settings} = 
+      network
+      |> Map.take(@network_keys)
+      |> Enum.map(fn({key, value}) -> 
+        case key do
+          "ifname" -> {String.to_atom(key), value}
+          "ssid" -> {String.to_atom(key), value}
+          "psk" -> {String.to_atom(key), value}
+          "ipv4" <> _ -> {String.to_atom(key), value}
+          key -> {String.to_atom(key), String.to_atom(value)}
+        end
       end)
+      |> Keyword.split([:ifname])
 
-    val = if Enum.empty?(network_config), do: [], else: network_config
-    network = Map.put(acc.network, interface, val)
-    %{acc | network: network}
+    parse(rest, [{ifname, settings} | acc])
   end
+
+  def parse([], acc), do: acc
 end
